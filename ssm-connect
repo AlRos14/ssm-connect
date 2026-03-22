@@ -193,7 +193,7 @@ resolve_interactive() {
       fzf --header="$header" --layout=reverse --prompt="Instance> ") || {
       err "No instance selected"; exit 1
     }
-    RESOLVED_ID=$(awk '{print $1}' <<< "$selected")
+    RESOLVED_ID=$(awk 'NR==1 {print $1}' <<< "$selected")
     [[ -n "$RESOLVED_ID" ]] || { err "Failed to parse selected instance ID"; exit 1; }
     for inst in "${instances[@]}"; do
       local inst_id
