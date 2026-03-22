@@ -55,12 +55,21 @@ Common types:
 
 ## Testing
 
-There is no automated test suite. Before opening a PR, please manually verify:
+The test suite covers input validation functions and CLI behaviour (flags, exit codes, error messages). No AWS credentials or network access are required.
 
-- `ssm-connect` with no arguments (interactive mode)
-- `ssm-connect <name>` — single match, multiple matches, no match
-- `ssm-connect <instance-id>` — valid ID, invalid ID
-- `SSM_USER=ec2-user ssm-connect <name>`
+```bash
+bash tests/test_validation.sh   # unit tests for validate_user / validate_port / validate_host
+bash tests/test_cli.sh          # CLI integration tests using a mock aws command
+```
+
+Both scripts exit 0 on success and print a `Results: N passed, 0 failed` summary.
+
+**How the tests work**
+
+- `test_validation.sh` sources the script with `_SSMC_SOURCE_ONLY=1`, which loads all function definitions without executing the main logic. Functions are then called directly in subshells.
+- `test_cli.sh` runs the script as a black box with a mock `aws` binary injected at the front of `$PATH`. The mock returns minimal valid responses so the script can reach the code paths under test without touching AWS.
+
+Before opening a PR, please verify that both test files pass cleanly.
 
 ---
 
