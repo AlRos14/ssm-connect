@@ -4,7 +4,7 @@
 
 set -euo pipefail
 
-VERSION="1.1.0"
+VERSION="0.1.1"
 
 # ── Colours ──────────────────────────────────────────────────────────────────
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
@@ -91,6 +91,31 @@ done
 require_cmd aws
 require_cmd jq
 
+# ── Input validation ──────────────────────────────────────────────────────────
+validate_user() {
+  [[ "$1" =~ ^[a-zA-Z0-9._-]+$ ]] || {
+    err "Invalid user '${1}': only alphanumeric, dot, dash and underscore are allowed"
+    exit 1
+  }
+}
+
+validate_port() {
+  [[ "$1" =~ ^[0-9]+$ ]] && (( $1 >= 1 && $1 <= 65535 )) || {
+    err "Invalid port '${1}': must be an integer between 1 and 65535"
+    exit 1
+  }
+}
+
+validate_host() {
+  # Reject anything that could escape the JSON string (quotes, backslashes, spaces)
+  [[ "$1" =~ ^[a-zA-Z0-9._-]+$ ]] || {
+    err "Invalid host '${1}': only alphanumeric, dot, dash and underscore are allowed"
+    exit 1
+  }
+}
+
+validate_user "$SSM_USER"
+
 # ── Instance resolution ───────────────────────────────────────────────────────
 RESOLVED_ID=""
 RESOLVED_NAME=""
@@ -169,6 +194,7 @@ resolve_interactive() {
       err "No instance selected"; exit 1
     }
     RESOLVED_ID=$(awk '{print $1}' <<< "$selected")
+    [[ -n "$RESOLVED_ID" ]] || { err "Failed to parse selected instance ID"; exit 1; }
     for inst in "${instances[@]}"; do
       local inst_id
       inst_id=$(echo "$inst" | jq -r '.ID')
@@ -208,7 +234,7 @@ resolve_interactive() {
 # ── Resolve target ────────────────────────────────────────────────────────────
 if [[ ${#POSITIONAL[@]} -ge 1 ]]; then
   target="${POSITIONAL[0]}"
-  if [[ "$target" =~ ^i-[0-9a-f]+$ ]]; then
+  if [[ "$target" =~ ^i-[0-9a-f]{8}([0-9a-f]{9})?$ ]]; then
     resolve_by_id "$target"
   else
     resolve_by_name "$target"
@@ -236,6 +262,10 @@ if [[ -n "$OPT_FORWARD" ]]; then
   fi
 
   display="${RESOLVED_NAME:-$RESOLVED_ID}"
+
+  validate_port "$local_port"
+  validate_port "$remote_port"
+  [[ "$remote_host" != "localhost" && "$remote_host" != "127.0.0.1" ]] && validate_host "$remote_host"
 
   if [[ "$remote_host" == "localhost" || "$remote_host" == "127.0.0.1" ]]; then
     ok "Forwarding ${BOLD}localhost:${local_port}${RESET}${GREEN} → ${display}:${remote_port}${RESET}"

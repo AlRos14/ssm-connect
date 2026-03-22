@@ -7,7 +7,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.1.0] - 2026-03-22
+## [0.1.1] - 2026-03-22
 
 ### Added
 - Port forwarding via `-L local:remote_port` (forward to instance port) and `-L local:host:remote_port` (tunnel via instance to remote host)
@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
-## [1.0.0] - 2026-03-22
+## [0.1.0] - 2026-03-22
 
 ### Added
 - Initial release
