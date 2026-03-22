@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [1.1.0] - 2026-03-22
+
+### Added
+- Port forwarding via `-L local:remote_port` (forward to instance port) and `-L local:host:remote_port` (tunnel via instance to remote host)
+- `--profile` / `-p` flag to specify an AWS CLI profile per invocation
+- `--region` / `-r` flag to specify an AWS region per invocation
+- `--user` / `-u` flag as an alternative to the `$SSM_USER` environment variable
+- `--reason` flag to attach a reason string to the SSM session (visible in CloudTrail)
+- `--help` / `-h` flag with full usage output
+- `--version` / `-V` flag
+- `fzf` support in interactive mode — when `fzf` is installed, the numbered list is replaced with a fuzzy picker (falls back gracefully when not available)
+- `warn()` helper for yellow warning messages
+
+### Changed
+- All UI output (colours, tables, prompts) now goes to stderr, keeping stdout clean
+- Refactored instance resolution into focused functions: `resolve_by_id`, `resolve_by_name`, `resolve_interactive`
+- `aws` calls are now routed through `aws_cmd()` which injects `--profile` / `--region` when set
+
+### Fixed
+- `run-parts /etc/update-motd.d/` is now guarded with `command -v run-parts` to avoid failures on non-Ubuntu distributions (Amazon Linux, RHEL, etc.)
+
+---
+
 ## [1.0.0] - 2026-03-22
 
 ### Added
