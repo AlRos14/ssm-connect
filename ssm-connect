@@ -7,8 +7,16 @@ set -euo pipefail
 VERSION="0.1.1"
 
 # ── Colours ──────────────────────────────────────────────────────────────────
-RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
-CYAN='\033[0;36m'; BOLD='\033[1m'; RESET='\033[0m'
+if [[ -t 2 && -z "${NO_COLOR:-}" ]]; then
+  printf -v RED '\033[0;31m'
+  printf -v GREEN '\033[0;32m'
+  printf -v YELLOW '\033[1;33m'
+  printf -v CYAN '\033[0;36m'
+  printf -v BOLD '\033[1m'
+  printf -v RESET '\033[0m'
+else
+  RED=''; GREEN=''; YELLOW=''; CYAN=''; BOLD=''; RESET=''
+fi
 
 err()  { echo -e "${RED}✖ $*${RESET}" >&2; }
 info() { echo -e "${CYAN}ℹ $*${RESET}" >&2; }
@@ -117,7 +125,7 @@ resolve_by_name() {
     aws_cmd ec2 describe-instances \
       --query "Reservations[].Instances[?State.Name=='running'].{ID:InstanceId,Name:Tags[?Key=='Name']|[0].Value}" \
       --output json | jq -r --arg pat "$target" \
-        '.[] | select(.Name != null) | select(.Name | ascii_downcase | contains($pat | ascii_downcase)) | "\(.ID)\t\(.Name)"'
+        '.[][] | select(.Name != null) | select(.Name | ascii_downcase | contains($pat | ascii_downcase)) | "\(.ID)\t\(.Name)"'
   )
 
   if [[ ${#matches[@]} -eq 0 ]]; then

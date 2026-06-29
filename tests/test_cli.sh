@@ -13,7 +13,7 @@ FAIL=0
 MOCK_DIR=$(mktemp -d)
 trap 'rm -rf "$MOCK_DIR"' EXIT
 
-# aws mock: satisfy require_cmd; for describe-instances return empty list
+# aws mock: satisfy require_cmd; for describe-instances return empty by default
 cat > "$MOCK_DIR/aws" << 'AWSMOCK'
 #!/usr/bin/env bash
 # Shift past any global flags (--profile, --region) before parsing subcommand
@@ -23,6 +23,8 @@ case "${1:-}.${2:-}" in
     # Return valid empty response for both JSON and text output modes
     if [[ "${*}" =~ "--output text" ]]; then
       echo "None"
+    elif [[ "${SSMC_TEST_FIXTURE:-}" == "instances" ]]; then
+      echo '[[{"ID":"i-11112222333344445","Name":"NutraliaHub"},{"ID":"i-22223333444455556","Name":"prod-api"}]]'
     else
       echo '{"Reservations":[]}'
     fi ;;
@@ -69,6 +71,18 @@ assert_output() {
   fi
 }
 
+assert_not_output() {
+  local desc="$1" pattern="$2"
+  shift 2
+  local output
+  output=$("$@" 2>&1) || true
+  if echo "$output" | grep -qF "$pattern"; then
+    fail "$desc  (expected output not to contain '${pattern}', got: ${output})"
+  else
+    pass "$desc"
+  fi
+}
+
 # ── --version / --help ────────────────────────────────────────────────────────
 echo ""
 echo "Flags: --version / --help"
@@ -79,6 +93,7 @@ assert_exit   "-V exits 0"                     0  "$SCRIPT" -V
 assert_exit   "--help exits 0"                 0  "$SCRIPT" --help
 assert_exit   "-h exits 0"                     0  "$SCRIPT" -h
 assert_output "--help mentions Usage"          "Usage:"  "$SCRIPT" --help
+assert_not_output "--help hides raw ANSI escapes" '\\033'  "$SCRIPT" --help
 
 # ── Unknown options ───────────────────────────────────────────────────────────
 echo ""
@@ -123,6 +138,18 @@ assert_output "too few parts in spec"  "Invalid -L spec" \
   "$SCRIPT" -L "8080" some-server
 assert_output "too many parts in spec" "Invalid -L spec" \
   "$SCRIPT" -L "8080:host:5432:extra" some-server
+
+
+# ── Instance name resolution ──────────────────────────────────────────────────
+echo ""
+echo "Instance name resolution"
+
+assert_output "name target resolves nested AWS response" "Connecting to NutraliaHub" \
+  env SSMC_TEST_FIXTURE=instances "$SCRIPT" NutraliaHub
+assert_output "name target supports case-insensitive partial match" "Connecting to NutraliaHub" \
+  env SSMC_TEST_FIXTURE=instances "$SCRIPT" nutralia
+assert_output "missing name still reports no match" "No running instance" \
+  env SSMC_TEST_FIXTURE=instances "$SCRIPT" missing-server
 
 # ── Instance ID regex ─────────────────────────────────────────────────────────
 echo ""
