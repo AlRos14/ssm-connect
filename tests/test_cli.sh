@@ -88,7 +88,7 @@ echo ""
 echo "Flags: --version / --help"
 
 assert_exit   "--version exits 0"              0  "$SCRIPT" --version
-assert_output "--version prints version"       "0.1.1"  "$SCRIPT" --version
+assert_output "--version prints version"       "0.1.2"  "$SCRIPT" --version
 assert_exit   "-V exits 0"                     0  "$SCRIPT" -V
 assert_exit   "--help exits 0"                 0  "$SCRIPT" --help
 assert_exit   "-h exits 0"                     0  "$SCRIPT" -h

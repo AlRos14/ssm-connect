@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ---
 
+## [0.1.2] - 2026-06-29
+
+### Fixed
+- Direct instance-name targets now resolve running EC2 instances correctly from nested AWS output.
+- Help output no longer prints raw ANSI escape sequences when captured or run outside an interactive terminal.
+
+---
+
 ## [0.1.1] - 2026-03-22
 
 ### Added
